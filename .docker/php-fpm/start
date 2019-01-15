@@ -1,0 +1,37 @@
+#!/bin/sh
+
+# precreate laravel.log
+touch /var/www/html/storage/logs/laravel.log
+mkdir /var/www/html/storage/blobs
+
+# set file and folder permissions
+chown -R :www-data /var/www/html
+chown -R :www-data /var/www/html/storage
+chown -R :www-data /var/www/html/bootstrap/cache/
+find /var/www/html -type f -exec chmod 644 {} \;
+find /var/www/html -type d -exec chmod 755 {} \;
+chmod 775 /var/www/html/artisan
+chmod -R 775 /var/www/html/storage
+chmod -R 775 /var/www/html/bootstrap/cache
+
+# generate APP_KEY if it is not set yet
+if [[ $(./artisan key:isset) = "false" ]]; then
+    ./artisan key:generate
+fi
+
+echo "Waiting for MySQL server to start accepting queries..."
+while [ 0 ]; do
+    result=$(./artisan db:isready)
+    sleep 1
+
+    if [[ "$result" = "true" ]]; then
+        break
+    fi
+done
+
+# run database migrations and seeders
+./artisan migrate
+./artisan db:seed
+
+# start php-fpm
+php-fpm

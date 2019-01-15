@@ -1,0 +1,22 @@
+version: '3.3'
+
+services:
+  apache:
+    build:
+      context: ./.docker/apache/
+    container_name: apache-app
+    expose:
+      - 8080
+    volumes:
+      - ./src:/var/www/html
+    restart: always
+    environment:
+      VIRTUAL_HOST: apache.local
+
+volumes:
+    db_data: {}
+
+networks:
+  default:
+    external:
+      name: nginx-reverse-proxy
